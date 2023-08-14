@@ -1,12 +1,15 @@
 FROM alpine/git as git-semver-checkout
 WORKDIR /go
 RUN git clone https://github.com/mdomke/git-semver.git ./src
+RUN cd ./src
+RUN ls -l
 
 
 FROM golang:1.21-alpine as git-semver-builder
 WORKDIR /go
 COPY --from=git-semver-checkout /go/src /go/
 RUN cd ./src
+RUN ls -l
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-w -s -extldflags="-static"' -a -o /go/bin/git-semver
 
 FROM alpine:3
