@@ -6,8 +6,6 @@ name: Docker
 # documentation.
 
 on:
-  schedule:
-    - cron: '41 7 * * *'
   push:
     branches: [ "main" ]
     # Publish semver tags as releases.
@@ -23,8 +21,16 @@ env:
 
 
 jobs:
-  build:
-
+  get-image-dirs:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls -d */ | jq -R -s -c 'split("\n")[:-1]')"
+  check:
+    needs: get-image-dirs
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,7 +38,13 @@ jobs:
       # This is used to complete the identity challenge
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
-
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.get-image-dirs.outputs.matrix) }}
+    # steps:
+    #   - uses: actions/checkout@v2   
+    #   - run: |
+    #     ./check-manifest ${{ matrix.dir }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
